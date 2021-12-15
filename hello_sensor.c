@@ -740,49 +740,61 @@ int hello_sensor_write_handler(LEGATTDB_ENTRY_HDR *p)
 void hello_sensor_interrupt_handler(UINT8 value)
 {
     BLEPROFILE_DB_PDU db_pdu;
+    static uint32_t previous_button_pressed_timer = 0;
+    static uint32_t current_button_pressed_timer = 0;
 
-    ble_trace3("(INT)But1:%d But2:%d But3:%d\n", value&0x01, (value& 0x02) >> 1, (value & 0x04) >> 2);
+    current_button_pressed_timer = hello_sensor_fine_timer_count;
 
-    // Blink as configured
-    bleprofile_LEDBlink(250, 250, hello_sensor_hostinfo.number_of_blinks);
+    ble_trace3("\n(INT)But1:%d But2:%d But3:%d\n", value&0x01, (value& 0x02) >> 1, (value & 0x04) >> 2);
 
-    // keep number of the button pushes in the last byte of the Hello %d message.  That will
-    // guarantee that if client reads it, it will have correct data.
-    bleprofile_ReadHandle(HANDLE_HELLO_SENSOR_VALUE_NOTIFY, &db_pdu);
-    ble_tracen((char *)db_pdu.pdu, db_pdu.len);
-    ble_trace0("\n");
-    db_pdu.pdu[6]++;
-    if (db_pdu.pdu[6] > '9')
-        db_pdu.pdu[6] = '0';
-    bleprofile_WriteHandle(HANDLE_HELLO_SENSOR_VALUE_NOTIFY, &db_pdu);
+    ble_trace2("\n(INT)current %d, previous %d\n", current_button_pressed_timer, previous_button_pressed_timer);
 
-    // remember how many messages we need to send
-    hello_sensor_num_to_write++;
-
-    // If connection is down, we need to start advertisements, so that client can connect
-    if (hello_sensor_connection_handle == 0)
+    if ((current_button_pressed_timer - previous_button_pressed_timer) > 1)
     {
-        bleprofile_Discoverable(HIGH_UNDIRECTED_DISCOVERABLE, hello_sensor_remote_addr);
+        ble_trace0("Button pressed.\n");
+        previous_button_pressed_timer = current_button_pressed_timer;
 
-        ble_trace2("ADV start high: %08x%04x\n",
-                    (hello_sensor_hostinfo.bdaddr[5] << 24) + (hello_sensor_hostinfo.bdaddr[4] << 16) +
-                    (hello_sensor_hostinfo.bdaddr[3] << 8) + hello_sensor_hostinfo.bdaddr[2],
-                    (hello_sensor_hostinfo.bdaddr[1] << 8) + hello_sensor_hostinfo.bdaddr[0]);
-        return;
-    }
-    // Connection is up. Send message if client is registered to receive indication
-    //  or notification.  After we sent an indication we need to wait for the ack before
-    // we can send anything else
-    while ((hello_sensor_num_to_write != 0) && !hello_sensor_indication_sent)
-    {
-        hello_sensor_num_to_write--;
-        hello_sensor_send_message();
-    }
+        // Blink as configured
+        bleprofile_LEDBlink(250, 250, hello_sensor_hostinfo.number_of_blinks);
 
-    // if we sent all messages, start connection idle timer to disconnect
-    if (!hello_sensor_stay_connected && !hello_sensor_indication_sent)
-    {
-        bleprofile_StartConnIdleTimer(bleprofile_p_cfg->con_idle_timeout, bleprofile_appTimerCb);
+        // keep number of the button pushes in the last byte of the Hello %d message.  That will
+        // guarantee that if client reads it, it will have correct data.
+        bleprofile_ReadHandle(HANDLE_HELLO_SENSOR_VALUE_NOTIFY, &db_pdu);
+        ble_tracen((char *)db_pdu.pdu, db_pdu.len);
+        ble_trace0("\n");
+        db_pdu.pdu[6]++;
+        if (db_pdu.pdu[6] > '9')
+            db_pdu.pdu[6] = '0';
+        bleprofile_WriteHandle(HANDLE_HELLO_SENSOR_VALUE_NOTIFY, &db_pdu);
+
+        // remember how many messages we need to send
+        hello_sensor_num_to_write++;
+
+        // If connection is down, we need to start advertisements, so that client can connect
+        if (hello_sensor_connection_handle == 0)
+        {
+            bleprofile_Discoverable(HIGH_UNDIRECTED_DISCOVERABLE, hello_sensor_remote_addr);
+
+            ble_trace2("ADV start high: %08x%04x\n",
+                        (hello_sensor_hostinfo.bdaddr[5] << 24) + (hello_sensor_hostinfo.bdaddr[4] << 16) +
+                        (hello_sensor_hostinfo.bdaddr[3] << 8) + hello_sensor_hostinfo.bdaddr[2],
+                        (hello_sensor_hostinfo.bdaddr[1] << 8) + hello_sensor_hostinfo.bdaddr[0]);
+            return;
+        }
+        // Connection is up. Send message if client is registered to receive indication
+        //  or notification.  After we sent an indication we need to wait for the ack before
+        // we can send anything else
+        while ((hello_sensor_num_to_write != 0) && !hello_sensor_indication_sent)
+        {
+            hello_sensor_num_to_write--;
+            hello_sensor_send_message();
+        }
+
+        // if we sent all messages, start connection idle timer to disconnect
+        if (!hello_sensor_stay_connected && !hello_sensor_indication_sent)
+        {
+            bleprofile_StartConnIdleTimer(bleprofile_p_cfg->con_idle_timeout, bleprofile_appTimerCb);
+        }
     }
 }
 
