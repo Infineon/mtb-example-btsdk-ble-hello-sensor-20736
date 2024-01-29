@@ -1,5 +1,5 @@
 /*
- * Copyright 2016-2023, Cypress Semiconductor Corporation (an Infineon company) or
+ * Copyright 2016-2024, Cypress Semiconductor Corporation (an Infineon company) or
  * an affiliate of Cypress Semiconductor Corporation.  All rights reserved.
  *
  * This software, including source code, documentation and related
@@ -261,7 +261,7 @@ const UINT8 hello_sensor_gatt_database[]=
 
 const BLE_PROFILE_CFG hello_sensor_cfg =
 {
-    /*.fine_timer_interval            =*/ 1000, // ms
+    /*.fine_timer_interval            =*/ 200,  // ms
     /*.default_adv                    =*/ 4,    // HIGH_UNDIRECTED_DISCOVERABLE
     /*.button_adv_toggle              =*/ 0,    // pairing button make adv toggle (if 1) or always on (if 0)
     /*.high_undirect_adv_interval     =*/ 32,   // slots
@@ -717,7 +717,7 @@ int hello_sensor_write_handler(LEGATTDB_ENTRY_HDR *p)
         hello_sensor_hostinfo.number_of_blinks = attrPtr[0];
     if (hello_sensor_hostinfo.number_of_blinks != 0)
     {
-        bleprofile_LEDBlink(250, 250, hello_sensor_hostinfo.number_of_blinks);
+        bleprofile_LEDBlink(500, 500, hello_sensor_hostinfo.number_of_blinks);
     }
     }
     else
@@ -756,7 +756,7 @@ void hello_sensor_interrupt_handler(UINT8 value)
         previous_button_pressed_timer = current_button_pressed_timer;
 
         // Blink as configured
-        bleprofile_LEDBlink(250, 250, hello_sensor_hostinfo.number_of_blinks);
+        bleprofile_LEDBlink(500, 500, hello_sensor_hostinfo.number_of_blinks);
 
         // keep number of the button pushes in the last byte of the Hello %d message.  That will
         // guarantee that if client reads it, it will have correct data.
