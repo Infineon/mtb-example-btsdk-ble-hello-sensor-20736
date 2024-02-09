@@ -21,12 +21,9 @@ To demonstrate the app, work through the following steps:
 5. Push the user button on the board to send notifications to the client.
 6. Write the hello sensor characteristic configuration value from the client.
 7. The number of LED blinks on the hello sensor device indicates value written by the client.
-## Device Name
-The application device name can be changed in command line with APP_NAME=xxxxxxxx option.
-The maximum application device name is 8 characters and no space is allowed. The default name is Hello.
 
-Build command example:
-$ make program APP_NAME=Hello123
+Build and program command example:
+$ make program
 
 ## BTSTACK version
 
